@@ -32,7 +32,7 @@ func main() {
 
 	searchTerm := "a"
 	limit := 50
-	query := searchTerm + "&type=track&limit=" + strconv.Itoa(limit) + "&offset="
+	query := searchTerm + "&type=track&tag=hipster&limit=" + strconv.Itoa(limit) + "&offset="
 	slog.Info(fmt.Sprintf("Query: %s", query))
 
 	retryTicker := time.NewTicker(time.Duration(retryInterval) * time.Second)
