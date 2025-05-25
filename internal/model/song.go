@@ -1,9 +1,7 @@
 package model
 
 type Song struct {
-	ID      string `json:"id"`
-	Name    string `json:"name"`
-	Artists []struct {
-		Name string `json:"name"`
-	} `json:"artists"`
+	ID          string   `json:"spotifyId"`
+	Name        string   `json:"name"`
+	ArtistNames []string `json:"artistNames"`
 }

@@ -24,6 +24,5 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
-          context: ./tracker-service
           push: true
           tags: ${{ secrets.REGISTRY_USERNAME }}/moodify_tracker_service:latest

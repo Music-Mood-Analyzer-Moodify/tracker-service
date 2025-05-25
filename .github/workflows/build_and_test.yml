@@ -9,9 +9,6 @@ on:
 jobs:
   build_and_test:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./tracker-service
     strategy:
       matrix:
         go-version: ["1.24.x"]

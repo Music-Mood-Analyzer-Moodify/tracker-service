@@ -12,7 +12,13 @@ import (
 
 type spotifyTracksResponse struct {
 	Tracks struct {
-		Items []model.Song `json:"items"`
+		Items []struct {
+			ID      string `json:"id"`
+			Name    string `json:"name"`
+			Artists []struct {
+				Name string `json:"name"`
+			} `json:"artists"`
+		}
 	} `json:"tracks"`
 }
 
@@ -86,5 +92,20 @@ func SearchTracks(
         return nil, err
     }
 
-    return &spotifyResp.Tracks.Items, nil
+	songs := make([]model.Song, len(spotifyResp.Tracks.Items))
+
+	for i, item := range spotifyResp.Tracks.Items {
+		artistNames := make([]string, len(item.Artists))
+		for j, artist := range item.Artists {
+			artistNames[j] = artist.Name
+		}
+		
+		songs[i] = model.Song{
+			ID:          item.ID,
+			Name:        item.Name,
+			ArtistNames: artistNames,
+		}
+	}
+
+    return &songs, nil
 }
