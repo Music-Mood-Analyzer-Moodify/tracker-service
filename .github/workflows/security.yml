@@ -79,7 +79,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build a Docker image
-        run: docker build -t moodify/tracker-service
+        run: docker build -t moodify/tracker-service .
 
       - name: Run Snyk to check Docker image for vulnerabilities
         continue-on-error: true
