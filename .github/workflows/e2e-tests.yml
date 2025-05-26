@@ -1,0 +1,71 @@
+name: E2E Tests
+
+permissions:
+  contents: read
+  packages: read
+  actions: read
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: ["main"]
+  push:
+    branches: ["main"]
+  schedule:
+    - cron: "0 0 * * 0" # Every Sunday at midnight
+  # Uncomment the following line to run the workflow every day at midnight
+  # schedule:
+  #   - cron: "0 0 * * *" # Every day at midnight
+
+jobs:
+  E2E-Tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker-Compose
+        uses: KengoTODA/actions-setup-docker-compose@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.ACCESS_TOKEN }}
+
+      - name: Set environment variables
+        run: |
+          echo "SPOTIFY_CLIENT_ID=${{ secrets.SPOTIFY_CLIENT_ID }}" >> $GITHUB_ENV
+          echo "SPOTIFY_CLIENT_SECRET=${{ secrets.SPOTIFY_CLIENT_SECRET }}" >> $GITHUB_ENV
+
+      - name: Create Firebase credentials file
+        run: |
+          mkdir -p ./e2e-testing/secrets
+          echo "${{ secrets.FIREBASE_CREDS_B64 }}" | base64 --decode > ./e2e-testing/secrets/firebase-credentials.json
+
+      - name: Compose CI File
+        run: docker-compose -f ./e2e-testing/docker-compose.ci.yml up -d --build
+
+      - name: Install Newman on the client container
+        run: docker exec e2e-client npm install -g newman-reporter-htmlextra
+
+      - name: Wait a bit
+        run: sleep 10
+
+      - name: Run E2E Tests
+        run: docker exec e2e-client newman run e2e-tests.postman_collection.json -e e2e-tests.postman_collection.json --env-var "api_key=${{ secrets.INTEGRATION_TEST_GOOGLE_API_KEY }}"  --insecure --delay-request 1000 --reporters cli,htmlextra --reporter-htmlextra-export report.html
+
+      - name: Copy Report to Host
+        run: docker cp e2e-client:report.html .
+
+      - name: Stop and Remove Containers
+        run: docker-compose -f ./e2e-testing/docker-compose.ci.yml down
+
+      - name: Upload Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-test-report
+          path: report.html
+        if: always()

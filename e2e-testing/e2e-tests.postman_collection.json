@@ -1,0 +1,361 @@
+{
+	"info": {
+		"_postman_id": "e375f745-2195-4fe1-bb41-10a4faa1afb1",
+		"name": "moodify E2E tests",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "14834479"
+	},
+	"item": [
+		{
+			"name": "Get Firebase Token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const response = pm.response.json();\r",
+							"pm.environment.set(\"idToken\", response.idToken);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disabledSystemHeaders": {
+					"user-agent": true,
+					"accept": true,
+					"accept-encoding": true,
+					"connection": true
+				}
+			},
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\": \"testuser@example.com\",\r\n    \"password\": \"testpassword\",\r\n    \"returnSecureToken\": true\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={{api_key}}",
+					"protocol": "https",
+					"host": [
+						"identitytoolkit",
+						"googleapis",
+						"com"
+					],
+					"path": [
+						"v1",
+						"accounts:signInWithPassword"
+					],
+					"query": [
+						{
+							"key": "key",
+							"value": "{{api_key}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Song Service - Songs with emotion Copy",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Content type is application/json\", function () {\r",
+							"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response time is less than 1500ms\", function () {\r",
+							"  pm.expect(pm.response.responseTime).to.be.below(1500);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Each song has a non-empty Spotify ID, name, and non-empty array of artist names\", function () {\r",
+							"    const responseData = pm.response.json();\r",
+							"    \r",
+							"    pm.expect(responseData.content).to.be.an('array');\r",
+							"    \r",
+							"    responseData.content.forEach(function(song) {\r",
+							"        pm.expect(song.spotifyId).to.exist.and.to.not.be.empty;\r",
+							"        pm.expect(song.name).to.exist.and.to.not.be.empty;\r",
+							"        pm.expect(song.artistNames).to.be.an('array').and.to.not.be.empty;\r",
+							"    });\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Emotion for each song is one of the specific emotions\", function () {\r",
+							"    const responseData = pm.response.json();\r",
+							"    \r",
+							"    pm.expect(responseData.content).to.be.an('array');\r",
+							"    \r",
+							"    responseData.content.forEach(function(song) {\r",
+							"        pm.expect(song.emotion).to.be.a('string').and.to.satisfy(function (emotion) {\r",
+							"            const specificEmotions = [\"HAPPY\"]; // Add more specific emotions as needed\r",
+							"            return specificEmotions.includes(emotion);\r",
+							"        }, \"Emotion should be one of the specific emotions\");\r",
+							"    });\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Emotion for each song is not empty\", function () {\r",
+							"    const responseData = pm.response.json();\r",
+							"    \r",
+							"    pm.expect(responseData.content).to.be.an('array');\r",
+							"    responseData.content.forEach(function(song) {\r",
+							"        pm.expect(song.emotion).to.exist.and.to.not.be.empty;\r",
+							"    });\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Origin",
+						"value": "http://localhost:3000",
+						"type": "text"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{idToken}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://e2e-gateway-moodify:8080/api/song/songsWithEmotion?page=0&emotion=happy",
+					"protocol": "http",
+					"host": [
+						"e2e-gateway-moodify"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"song",
+						"songsWithEmotion"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "emotion",
+							"value": "happy"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Song Service - All songs",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Content type is application/json\", function () {\r",
+							"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response time is less than 1500ms\", function () {\r",
+							"  pm.expect(pm.response.responseTime).to.be.below(1500);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Each song has a non-empty Spotify ID, name, and non-empty array of artist names\", function () {\r",
+							"    const responseData = pm.response.json();\r",
+							"    \r",
+							"    pm.expect(responseData.content).to.be.an('array');\r",
+							"    \r",
+							"    responseData.content.forEach(function(song) {\r",
+							"        pm.expect(song.spotifyId).to.exist.and.to.not.be.empty;\r",
+							"        pm.expect(song.name).to.exist.and.to.not.be.empty;\r",
+							"        pm.expect(song.artistNames).to.be.an('array').and.to.not.be.empty;\r",
+							"    });\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Emotion for each song is one of the specific emotions\", function () {\r",
+							"    const responseData = pm.response.json();\r",
+							"    \r",
+							"    pm.expect(responseData.content).to.be.an('array');\r",
+							"    \r",
+							"    responseData.content.forEach(function(song) {\r",
+							"        pm.expect(song.emotion).to.be.a('string').and.to.satisfy(function (emotion) {\r",
+							"            const specificEmotions = [\"HAPPY\", \"SAD\", \"ANGRY\", \"RELAXED\", \"EXCITED\"]; // Add more specific emotions as needed\r",
+							"            return specificEmotions.includes(emotion);\r",
+							"        }, \"Emotion should be one of the specific emotions\");\r",
+							"    });\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Emotion for each song is not empty\", function () {\r",
+							"    const responseData = pm.response.json();\r",
+							"    \r",
+							"    pm.expect(responseData.content).to.be.an('array');\r",
+							"    responseData.content.forEach(function(song) {\r",
+							"        pm.expect(song.emotion).to.exist.and.to.not.be.empty;\r",
+							"    });\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Origin",
+						"value": "http://localhost:3000",
+						"type": "text"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{idToken}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://e2e-gateway-moodify:8080/api/song/allSongs?page=0",
+					"protocol": "http",
+					"host": [
+						"e2e-gateway-moodify"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"song",
+						"allSongs"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "0"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Song Service - All songs with unknown",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Content type is application/json\", function () {\r",
+							"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response time is less than 1500ms\", function () {\r",
+							"  pm.expect(pm.response.responseTime).to.be.below(1500);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Each song has a non-empty Spotify ID, name, and non-empty array of artist names\", function () {\r",
+							"    const responseData = pm.response.json();\r",
+							"    \r",
+							"    pm.expect(responseData.content).to.be.an('array');\r",
+							"    \r",
+							"    responseData.content.forEach(function(song) {\r",
+							"        pm.expect(song.spotifyId).to.exist.and.to.not.be.empty;\r",
+							"        pm.expect(song.name).to.exist.and.to.not.be.empty;\r",
+							"        pm.expect(song.artistNames).to.be.an('array').and.to.not.be.empty;\r",
+							"    });\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Emotion for each song is one of the specific emotions\", function () {\r",
+							"    const responseData = pm.response.json();\r",
+							"    \r",
+							"    pm.expect(responseData.content).to.be.an('array');\r",
+							"    \r",
+							"    responseData.content.forEach(function(song) {\r",
+							"        pm.expect(song.emotion).to.be.a('string').and.to.satisfy(function (emotion) {\r",
+							"            const specificEmotions = [\"UNKNOWN\"]; // Add more specific emotions as needed\r",
+							"            return specificEmotions.includes(emotion);\r",
+							"        }, \"Emotion should be one of the specific emotions\");\r",
+							"    });\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Emotion for each song is not empty\", function () {\r",
+							"    const responseData = pm.response.json();\r",
+							"    \r",
+							"    pm.expect(responseData.content).to.be.an('array');\r",
+							"    responseData.content.forEach(function(song) {\r",
+							"        pm.expect(song.emotion).to.exist.and.to.not.be.empty;\r",
+							"    });\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Origin",
+						"value": "http://localhost:3000",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://e2e-gateway-moodify:8080/api/song/allSongs?page=0",
+					"protocol": "http",
+					"host": [
+						"e2e-gateway-moodify"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"song",
+						"allSongs"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "0"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

@@ -1,0 +1,4 @@
+FROM node:slim
+COPY . .
+RUN npm install -g newman
+ENTRYPOINT ["tail", "-f", "/dev/null"]
