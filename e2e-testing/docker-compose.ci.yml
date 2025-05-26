@@ -1,0 +1,109 @@
+services:
+  client:
+    container_name: e2e-client
+    image: moodify-e2e-client
+    build:
+      context: .
+      dockerfile: ClientDockerfile
+    depends_on:
+      - gateway-moodify
+      - tracker-service
+      - song-service
+      - song-db
+      - rabbit-mq-moodify
+
+  gateway-moodify:
+    container_name: e2e-gateway-moodify
+    image: judahlit/moodify_gateway:latest
+    restart: unless-stopped
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/firebase-credentials.json
+      - GOOGLE_CLOUD_PROJECT_ID=moodify-web-frontend
+      - ANALYTICS_SERVICE_URL=http://e2e-analytics-service:8080
+      - SONG_SERVICE_URL=http://e2e-song-service:8080
+      - CORS_ALLOWED_ORIGIN=http://localhost:3000
+    ports:
+      - "8196:8080"
+    volumes:
+      - ./secrets/firebase-credentials.json:/app/firebase-credentials.json
+
+  song-service:
+    container_name: e2e-song-service
+    depends_on:
+      song-db:
+        condition: "service_healthy"
+    image: judahlit/moodify_song_service:latest
+    restart: unless-stopped
+    environment:
+      - SERVER_PORT=8080
+      - MONGO_URI=mongodb://yippie:eippiy@e2e-song-db:27017/Song
+      - MONGO_DATABASE=Song
+      - RABBIT_HOST=e2e-rabbit-mq-moodify
+      - RABBIT_PORT=5672
+      - RABBIT_USERNAME=guest
+      - RABBIT_PASSWORD=guest
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://e2e-otel-collector:4318
+    ports:
+      - "8198:8080"
+  song-db:
+    container_name: e2e-song-db
+    image: mongo:latest
+    restart: unless-stopped
+    environment:
+      - MONGO_USERNAME=yippie
+      - MONGO_PASSWORD=eippiy
+      - MONGO_DATABASE=Song
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=yippieroot
+      - MONGO_INITDB_DATABASE=Song
+    ports:
+      - "27180:27017"
+    expose:
+      - 27017
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh --quiet
+      interval: 10s
+      timeout: 15s
+      retries: 3
+      start_period: 20s
+    volumes:
+      - ./song-service-mongo-init.js:/docker-entrypoint-initdb.d/song-service-mongo-init.js:ro
+      - song-db-volume:/var/lib/song-db
+
+  tracker-service:
+    container_name: e2e-tracker-service
+    image: tracker-service:latest
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      - APP_NAME=tracker-service
+      - RABBITMQ_CONNECTION_STRING=amqp://guest:guest@e2e-rabbit-mq-moodify:5672/
+      - REQUEST_INTERVAL=30
+      - RETRY_INTERVAL=10000
+      - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID}
+      - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET}
+    ports:
+      - "8197:8080"
+
+  rabbit-mq-moodify:
+    container_name: e2e-rabbit-mq-moodify
+    restart: unless-stopped
+    image: rabbitmq:management-alpine
+    ports:
+      - "5780:5672"
+      - "15780:15672"
+    expose:
+      - 5672
+      - 15672
+
+  opentelemetry-collector:
+    container_name: e2e-otel-collector
+    image: grafana/otel-lgtm:latest
+    ports:
+      - "4438:4318"
+
+volumes:
+  tracker-db-volume:
+  song-db-volume:
