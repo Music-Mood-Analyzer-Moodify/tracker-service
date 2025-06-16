@@ -47,8 +47,7 @@ jobs:
         with:
           action: 'deploy'
           manifests: |
-            k8s/tracker-service-deployment.yaml
+            k8s/**
           strategy: 'basic'
           images: '${{ secrets.REGISTRY_USERNAME }}/moodify_tracker_service:latest'
           pull-images: false
-          namespace: 'development'
