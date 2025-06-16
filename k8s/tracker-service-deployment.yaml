@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: tracker-service-service
+spec:
+  selector:
+    app: tracker-service
+  ports:
+    - port: 8083
+      targetPort: 8080
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tracker-service-deployment
+  labels:
+    app: tracker-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tracker-service
+  template:
+    metadata:
+      labels:
+        app: tracker-service
+    spec:
+      containers:
+        - name: tracker-service
+          image: judahlit/moodify_tracker_service:latest
+          # image: k3d-moodify:5000/tracker_service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          resources:
+            limits:
+              memory: 512Mi
+              cpu: "1"
+          env:
+            - name: APP_NAME
+              value: "tracker-service"
+            - name: REQUEST_INTERVAL
+              value: "30"
+            - name: RETRY_INTERVAL
+              value: "10000"
+            - name: SPOTIFY_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: tracker-service-secret
+                  key: spotify-client-id
+            - name: SPOTIFY_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: tracker-service-secret
+                  key: spotify-client-secret
+            - name: RABBITMQ_CONNECTION_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-default-user
+                  key: connection_string
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://grafana-k8s-monitoring-alloy-receiver.default.svc.cluster.local:4318"
